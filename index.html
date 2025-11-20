@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình Quản lý Đơn Hàng</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; text-align: center; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-4 md:p-8 rounded-xl shadow-lg w-full max-w-lg mb-20"> <!-- Thêm margin-bottom để tránh bị che trên mobile -->
+        
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">
+                📝 Báo Cáo
+            </h1>
+            <!-- MỚI: Nút Xóa dữ liệu -->
+            <button id="reset-btn" class="text-sm text-red-500 hover:text-red-700 underline font-medium">
+                Làm mới
+            </button>
+        </div>
+
+        <div class="mb-6">
+            <div class="flex justify-between text-sm font-semibold text-gray-500 mb-2 px-2">
+                <span>Mặt hàng</span>
+                <div class="flex gap-8 mr-2">
+                    <span>Nhận</span>
+                    <span>Trả</span>
+                </div>
+            </div>
+            <div id="item-list" class="space-y-3">
+                <!-- JS chèn các mục vào đây -->
+            </div>
+        </div>
+
+        <div class="flex gap-3 my-6">
+            <button id="calculate-btn" class="flex-1 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-200 text-lg">
+                Tính Toán
+            </button>
+        </div>
+
+        <hr class="my-6 border-gray-200">
+
+        <div>
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">
+                📦 Kết Quả Đã Bán
+            </h2>
+            <div id="result-container">
+                <ul id="order-summary" class="space-y-2">
+                    <li class="text-gray-500 italic text-center text-sm">Nhập số liệu và nhấn Tính toán.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const items = ['Vỏ bánh', 'Bò', 'Tôm', 'Gà', 'Xúc xích', 'Trứng', 'Phô mai'];
+            
+            const recipes = [
+                { name: 'Burger Bò Trứng', ingredients: { 'Vỏ bánh': 1, 'Bò': 1, 'Trứng': 1 }, color: 'text-green-700', bgColor: 'bg-green-100' },
+                { name: 'Burger Tôm', ingredients: { 'Vỏ bánh': 1, 'Tôm': 1 }, color: 'text-purple-700', bgColor: 'bg-purple-100' },
+                { name: 'Burger Gà', ingredients: { 'Vỏ bánh': 1, 'Gà': 1 }, color: 'text-orange-700', bgColor: 'bg-orange-100' },
+                { name: 'Burger Trứng', ingredients: { 'Vỏ bánh': 1, 'Trứng': 1 }, color: 'text-yellow-700', bgColor: 'bg-yellow-100' },
+                { name: 'Burger Xúc Xích', ingredients: { 'Vỏ bánh': 1, 'Xúc xích': 1 }, color: 'text-red-700', bgColor: 'bg-red-100' }
+            ];
+
+            const itemList = document.getElementById('item-list');
+            const summaryList = document.getElementById('order-summary');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const resetBtn = document.getElementById('reset-btn');
+
+            // 1. Tạo giao diện nhập liệu
+            items.forEach(item => {
+                const itemRow = document.createElement('div');
+                itemRow.className = 'flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-100';
+                
+                const itemName = document.createElement('label');
+                itemName.textContent = item;
+                itemName.className = 'text-base text-gray-800 font-medium';
+                
+                const inputWrapper = document.createElement('div');
+                inputWrapper.className = 'flex items-center gap-2';
+
+                const id = item.replace(/\s+/g, '-');
+
+                const createInput = (type, placeholder) => {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.min = '0';
+                    input.id = `item-${type}-${id}`; // ví dụ: item-nhan-Vo-banh
+                    input.className = `quantity-input w-16 h-10 rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center font-semibold text-lg ${type === 'tra' ? 'text-red-600 bg-red-50' : 'text-blue-600 bg-white'}`;
+                    input.placeholder = placeholder;
+                    // MỚI: Thêm sự kiện lưu mỗi khi nhập
+                    input.addEventListener('input', saveData);
+                    return input;
+                };
+
+                inputWrapper.appendChild(createInput('nhan', '-'));
+                inputWrapper.appendChild(createInput('tra', '-'));
+                
+                itemRow.appendChild(itemName);
+                itemRow.appendChild(inputWrapper);
+                itemList.appendChild(itemRow);
+            });
+
+            // 2. MỚI: Hàm Lưu & Tải dữ liệu từ LocalStorage
+            function saveData() {
+                const data = {};
+                document.querySelectorAll('.quantity-input').forEach(input => {
+                    if (input.value) {
+                        data[input.id] = input.value;
+                    }
+                });
+                localStorage.setItem('burgerApp_data', JSON.stringify(data));
+            }
+
+            function loadData() {
+                const savedData = localStorage.getItem('burgerApp_data');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    for (const [id, value] of Object.entries(data)) {
+                        const input = document.getElementById(id);
+                        if (input) input.value = value;
+                    }
+                    // Tự động tính toán lại nếu có dữ liệu cũ
+                    calculateAndDisplaySummary();
+                }
+            }
+
+            // 3. MỚI: Hàm Reset (Làm mới)
+            resetBtn.addEventListener('click', () => {
+                if(confirm('Bạn có chắc muốn xóa hết dữ liệu nhập không?')) {
+                    document.querySelectorAll('.quantity-input').forEach(input => input.value = '');
+                    localStorage.removeItem('burgerApp_data');
+                    summaryList.innerHTML = '<li class="text-gray-500 italic text-center text-sm">Dữ liệu đã được làm mới.</li>';
+                }
+            });
+
+            // 4. Logic Tính toán (Giữ nguyên logic cũ)
+            function calculateAndDisplaySummary() {
+                summaryList.innerHTML = ''; 
+                const quantities = {};
+                let hasInput = false;
+                
+                items.forEach(item => {
+                    const id = item.replace(/\s+/g, '-');
+                    const valNhan = parseInt(document.getElementById(`item-nhan-${id}`).value, 10) || 0;
+                    const valTra = parseInt(document.getElementById(`item-tra-${id}`).value, 10) || 0;
+                    
+                    if (valNhan > 0 || valTra > 0) hasInput = true;
+
+                    const netQuantity = valNhan - valTra;
+                    quantities[item] = Math.max(0, netQuantity);
+                });
+
+                if (!hasInput) {
+                    summaryList.innerHTML = '<li class="text-gray-500 italic text-center text-sm">Chưa có dữ liệu nhập.</li>';
+                    return;
+                }
+
+                const comboResults = {};
+                let hasItems = false;
+
+                recipes.forEach(recipe => {
+                    let maxCombos = Infinity;
+                    for (const ingredient in recipe.ingredients) {
+                        const required = recipe.ingredients[ingredient];
+                        const available = quantities[ingredient] || 0;
+                        maxCombos = Math.min(maxCombos, Math.floor(available / required));
+                    }
+
+                    if (maxCombos === Infinity) maxCombos = 0;
+
+                    if (maxCombos > 0) {
+                        hasItems = true;
+                        if (comboResults[recipe.name]) {
+                             comboResults[recipe.name].amount += maxCombos;
+                        } else {
+                             comboResults[recipe.name] = { amount: maxCombos, ...recipe };
+                        }
+                        for (const ingredient in recipe.ingredients) {
+                            quantities[ingredient] -= maxCombos * recipe.ingredients[ingredient];
+                        }
+                    }
+                });
+
+                for (const comboName in comboResults) {
+                    appendSummaryItem(comboName, comboResults[comboName].amount, comboResults[comboName].color, comboResults[comboName].bgColor);
+                }
+
+                for (const item in quantities) {
+                    if (quantities[item] > 0) {
+                        hasItems = true;
+                        let isRecipeIngredient = recipes.some(recipe => recipe.ingredients[item]);
+                        const label = isRecipeIngredient ? `${item} (dư)` : item;
+                        appendSummaryItem(label, quantities[item], 'text-gray-800', 'bg-gray-100');
+                    }
+                }
+                
+                if (!hasItems) {
+                    summaryList.innerHTML = '<li class="text-gray-500 italic text-center">Không bán được combo nào.</li>';
+                }
+            }
+
+            function appendSummaryItem(name, quantity, textColor, bgColor) {
+                const li = document.createElement('li');
+                li.className = `py-3 px-4 rounded-lg flex justify-between items-center ${bgColor}`;
+                li.innerHTML = `
+                    <span class="font-bold ${textColor}">${name}</span>
+                    <span class="font-bold text-xl ${textColor}">${quantity}</span>
+                `;
+                summaryList.appendChild(li);
+            }
+
+            calculateBtn.addEventListener('click', calculateAndDisplaySummary);
+
+            // Load dữ liệu khi mở app
+            loadData();
+        });
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registered!', reg.scope));
+            });
+        }
+    </script>
+</body>
+</html>
+
+
