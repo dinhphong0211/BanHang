@@ -1,5 +1,5 @@
-// CẬP NHẬT: Đổi thành v2 để điện thoại nhận biết có bản mới
-const CACHE_NAME = 'order-manager-v2';
+// CẬP NHẬT: Đổi thành v3
+const CACHE_NAME = 'order-manager-v3';
 
 const urlsToCache = [
   './',
@@ -11,7 +11,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting(); // MỚI: Giúp cập nhật nhanh hơn
+  self.skipWaiting(); 
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(urlsToCache))
