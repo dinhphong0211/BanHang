@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sổ Chấm Máy Quán & Báo Cáo Doanh Thu</title>
+  
+  <!-- Cấu hình chuẩn Web App (PWA) để cài đặt lên màn hình điện thoại như ứng dụng -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Chấm Công">
+  <meta name="application-name" content="Chấm Công">
+  <meta name="theme-color" content="#059669">
+  <link rel="apple-touch-icon" href="https://placehold.co/192x192/059669/ffffff?text=CC">
+  <link rel="manifest" id="pwaManifestLink">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <!-- Thư viện SheetJS đọc/ghi Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Font Google Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .dark ::-webkit-scrollbar-track { background: #1e293b; }
+    .dark ::-webkit-scrollbar-thumb { background: #475569; }
+  </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen pb-16 antialiased select-none transition-colors duration-200">
+  <!-- Thanh Header cố định trên cùng -->
+  <header class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-3.5 sm:px-6 py-2.5 flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight">Sổ Chấm Máy Quán</h1>
+          <p class="text-[10px] sm:text-xs text-emerald-100 hidden xs:block">Tách kỳ 2 tuần • Tách ngày • Đổi giá linh hoạt</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-1.5 sm:space-x-2">
+        <!-- Nút chuyển đổi Dark/Light mode -->
+        <button id="btnToggleTheme" class="p-2 rounded-lg bg-white/15 hover:bg-white/25 active:scale-95 text-xs transition border border-white/20" title="Đổi chế độ sáng / tối">
+          <span id="themeIcon">🌙</span>
+        </button>
+
+        <label for="excelFileInput" class="cursor-pointer bg-white/15 hover:bg-white/25 active:scale-95 text-xs font-semibold px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg flex items-center space-x-1 transition border border-white/20">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          <span class="text-[11px] sm:text-xs">Đọc Excel</span>
+        </label>
+        <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="hidden">
+
+        <button id="btnExportExcel" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold text-xs px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg flex items-center space-x-1 shadow active:scale-95 transition">
+          <svg class="w-3.5 h-3.5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <span class="text-[11px] sm:text-xs">Xuất File</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-4 sm:space-y-6">
+    <!-- Banner trạng thái nạp file -->
+    <div id="fileStatusBanner" class="hidden rounded-xl border p-3 flex items-center justify-between transition-all bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs">
+      <div class="flex items-center space-x-2">
+        <span class="flex h-2.5 w-2.5 relative">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        </span>
+        <span id="fileStatusText" class="font-medium">Đang sử dụng dữ liệu lưu trên máy.</span>
+      </div>
+      <button id="btnCloseBanner" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1">✕</button>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+      <div class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-xs border border-slate-200 dark:border-slate-700">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs font-medium">
+          <span>Tổng số lượt máy</span>
+          <span class="p-1 rounded-md bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </span>
+        </div>
+        <div class="mt-1 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100" id="cardTotalMachines">0</div>
+        <p class="mt-0.5 text-[10px] text-slate-400" id="cardPriceSubtitle">Đơn giá mặc định: 20.000 đ</p>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-xs border border-slate-200 dark:border-slate-700">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs font-medium">
+          <span>Tổng thành tiền</span>
+          <span class="p-1 rounded-md bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </span>
+        </div>
+        <div class="mt-1 sm:mt-2 text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400" id="cardTotalAmount">0 đ</div>
+        <p class="mt-0.5 text-[10px] text-slate-400">Toàn bộ danh sách</p>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-xs border border-slate-200 dark:border-slate-700">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs font-medium">
+          <span>Số dòng nhập</span>
+          <span class="p-1 rounded-md bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          </span>
+        </div>
+        <div class="mt-1 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100" id="cardTotalRows">0</div>
+        <p class="mt-0.5 text-[10px] text-slate-400">Không trùng quán/ngày</p>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-xs border border-slate-200 dark:border-slate-700">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs font-medium">
+          <span>Danh mục quán</span>
+          <span class="p-1 rounded-md bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          </span>
+        </div>
+        <div class="mt-1 sm:mt-2 text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100" id="cardStoreCount">13</div>
+        <p class="mt-0.5 text-[10px] text-slate-400">Tự động ghi nhớ</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div class="lg:col-span-5 space-y-4">
+        <!-- Card nhập liệu -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 dark:border-slate-700">
+          <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-700 mb-3.5">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">Nhập Liệu Nhanh</h2>
+            </div>
+            <span class="text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-md">Chống trùng lặp</span>
+          </div>
+
+          <!-- Nút THÊM NHANH TẤT CẢ QUÁN CHO NGÀY ĐANG CHỌN -->
+          <div class="mb-3.5 p-2.5 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl flex items-center justify-between">
+            <div class="text-[11px] leading-tight">
+              <span class="font-bold text-emerald-800 dark:text-emerald-300">⚡ Chấm công cả ngày</span>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400">Tự điền tất cả các quán (Tư Ký, Thiện Ý, Xích Lô x2)</p>
+            </div>
+            <button type="button" id="btnQuickAddAll" class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition shadow-xs whitespace-nowrap">
+              + Thêm cả ngày
+            </button>
+          </div>
+
+          <form id="recordForm" class="space-y-3.5">
+            <!-- 1. Ngày làm việc & Cấu hình đơn giá mặc định -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  1. Ngày làm <span class="text-red-500">*</span>
+                </label>
+                <input type="date" id="inputDate" required class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">
+                  Đơn giá / Máy (đ) <span class="text-red-500">*</span>
+                </label>
+                <input type="number" id="inputUnitPrice" value="20000" step="1000" min="1000" required class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+            </div>
+
+            <!-- 2. Tên quán -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-[11px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                  2. Tên Quán <span class="text-red-500">*</span>
+                </label>
+                <button type="button" id="btnToggleNewStore" class="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-semibold flex items-center space-x-0.5">
+                  <span>+ Thêm quán mới</span>
+                </button>
+              </div>
+
+              <!-- Hộp nhập thêm quán mới kèm cấu hình số máy mặc định -->
+              <div id="newStoreBox" class="hidden mb-2.5 p-2.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-xl space-y-2">
+                <div class="flex items-center space-x-2">
+                  <input type="text" id="inputNewStoreName" placeholder="Gõ tên quán mới..." class="flex-1 text-xs bg-white dark:bg-slate-700 border border-emerald-300 dark:border-emerald-700 text-slate-800 dark:text-slate-100 rounded-lg px-2.5 py-1.5 focus:outline-none">
+                  <button type="button" id="btnAddNewStoreSubmit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg active:scale-95 transition whitespace-nowrap shadow-xs">
+                    Lưu Quán
+                  </button>
+                </div>
+                <div class="flex items-center justify-between text-xs pt-1.5 border-t border-emerald-200/60 dark:border-emerald-800/60">
+                  <span class="text-[11px] font-medium text-slate-600 dark:text-slate-300">Số máy mặc định cho quán này:</span>
+                  <div class="flex items-center space-x-3">
+                    <label class="inline-flex items-center cursor-pointer space-x-1">
+                      <input type="radio" name="newStoreDefaultQty" value="1" checked class="text-emerald-600 focus:ring-emerald-500">
+                      <span class="text-[11px] text-slate-700 dark:text-slate-300">1 Máy</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer space-x-1">
+                      <input type="radio" name="newStoreDefaultQty" value="2" class="text-purple-600 focus:ring-purple-500">
+                      <span class="text-[11px] font-bold text-purple-700 dark:text-purple-300">⚡ 2 Máy</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <select id="selectStore" required class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <!-- Nạp tự động từ danh sách 13 quán -->
+              </select>
+              <p id="storeAutoQtyNotice" class="hidden mt-1 text-[11px] text-purple-600 dark:text-purple-400 font-medium">⚡ Quán này tự động chọn 2 máy</p>
+            </div>
+
+            <!-- 3. Số lượng máy -->
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">
+                3. Số lượng máy <span class="text-red-500">*</span>
+              </label>
+              <div class="grid grid-cols-2 gap-2.5">
+                <label class="cursor-pointer">
+                  <input type="radio" name="radioQty" id="radioQty1" value="1" checked class="peer sr-only">
+                  <div class="py-2 px-3 text-center rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 peer-checked:border-emerald-600 peer-checked:bg-emerald-50 dark:peer-checked:bg-emerald-950/60 peer-checked:text-emerald-700 dark:peer-checked:text-emerald-300 font-bold text-xs sm:text-sm transition">
+                    1 Máy (<span class="unitPreview1">20k</span>)
+                  </div>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="radio" name="radioQty" id="radioQty2" value="2" class="peer sr-only">
+                  <div class="py-2 px-3 text-center rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 peer-checked:border-emerald-600 peer-checked:bg-emerald-50 dark:peer-checked:bg-emerald-950/60 peer-checked:text-emerald-700 dark:peer-checked:text-emerald-300 font-bold text-xs sm:text-sm transition">
+                    2 Máy (<span class="unitPreview2">40k</span>)
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 4. Ghi chú -->
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">
+                4. Ghi chú
+              </label>
+              <input type="text" id="inputNote" placeholder="Ví dụ: Bàn trong, chủ dặn 19h..." class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <button type="submit" id="btnSubmitForm" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-2.5 px-4 rounded-xl shadow active:scale-98 transition flex items-center justify-center space-x-1.5 text-xs sm:text-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+              <span>Lưu & Thêm Vào Bảng</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/60 rounded-2xl p-3 sm:p-4 text-[11px] text-blue-900 dark:text-blue-200 leading-relaxed">
+          <div class="font-bold flex items-center space-x-1 mb-1 text-blue-800 dark:text-blue-300">
+            <svg class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Quy chuẩn & Tiện ích:</span>
+          </div>
+          <p>• <strong>2 máy mặc định</strong>: Lẩu Dê Tư Ký, Ốc Ngon Thiện Ý, Xích Lô.</p>
+          <p>• <strong>Bấm sửa trực tiếp</strong>: Bạn có thể sửa ngày, tên quán, giá, số máy ngay trên bảng.</p>
+          <p>• <strong>Xuất Excel chuẩn</strong>: Tự động tách từng ngày có hàng phân cách rõ ràng.</p>
+        </div>
+      </div>
+
+      <div class="lg:col-span-7 space-y-4">
+        <!-- Báo cáo 2 Tuần & Tháng -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 dark:border-slate-700">
+          <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-700 mb-3">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+              <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">Báo Cáo Tách Tiền (2 Tuần & Tháng)</h2>
+            </div>
+            <button id="btnRefreshStats" class="text-xs text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium">Làm mới</button>
+          </div>
+
+          <div id="summaryReportContainer" class="space-y-3 max-h-[260px] overflow-y-auto pr-1">
+            <div class="text-center py-6 text-slate-400 text-xs">Chưa có dữ liệu nào.</div>
+          </div>
+        </div>
+
+        <!-- Chi tiết các dòng dữ liệu đã nhập - HIỂN THỊ CHIA THEO TỪNG NGÀY -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 dark:border-slate-700">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-700 mb-3">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+              <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">Danh Sách Theo Từng Ngày</h2>
+            </div>
+            <div class="flex items-center space-x-2">
+              <input type="text" id="filterKeyword" placeholder="Lọc theo quán..." class="text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-32 sm:w-36">
+              <button id="btnClearAll" class="text-xs text-red-500 hover:text-red-700 font-semibold px-2 py-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg">Xóa hết</button>
+            </div>
+          </div>
+
+          <!-- Container danh sách nhóm theo ngày -->
+          <div id="groupedTableContainer" class="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+            <!-- Render động các ngày tại đây -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Chỉnh Sửa Thông Số Dòng (Interactive inline editing) -->
+  <div id="editModalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden transition-opacity opacity-0">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-transform scale-95" id="editModalCard">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700 mb-3">
+        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Chỉnh sửa thông số</h3>
+        <button id="btnCancelEdit" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">✕</button>
+      </div>
+      <form id="editRecordForm" class="space-y-3 text-xs">
+        <input type="hidden" id="editRecordIndex">
+        <div>
+          <label class="block font-semibold text-slate-600 dark:text-slate-300 mb-1">Ngày làm việc:</label>
+          <input type="date" id="editDate" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-100">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 dark:text-slate-300 mb-1">Tên quán:</label>
+          <input type="text" id="editStore" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-100">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-600 dark:text-slate-300 mb-1">Đơn giá (đ):</label>
+            <input type="number" id="editPrice" step="1000" required class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-2.5 py-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 dark:text-slate-300 mb-1">Số lượng máy:</label>
+            <select id="editQty" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-100 font-semibold">
+              <option value="1">1 Máy</option>
+              <option value="2">2 Máy</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 dark:text-slate-300 mb-1">Ghi chú:</label>
+          <input type="text" id="editNote" placeholder="Ghi chú..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-100">
+        </div>
+        <div class="flex items-center space-x-2 pt-2">
+          <button type="button" id="btnDismissEdit" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold">Hủy</button>
+          <button type="submit" class="flex-1 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow">Cập nhật</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Thông báo Toast -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- Hộp thoại xác nhận tùy chỉnh -->
+  <div id="modalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden transition-opacity opacity-0">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-xs w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-transform scale-95" id="modalCard">
+      <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 text-center mb-1" id="modalTitle">Xác nhận</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 text-center mb-5" id="modalMessage">Bạn có chắc chắn?</p>
+      <div class="flex items-center space-x-2">
+        <button id="modalBtnCancel" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold text-xs">Hủy</button>
+        <button id="modalBtnConfirm" class="flex-1 px-3 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs">Đồng ý</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 13 Quán mặc định từ 3 ảnh lộ trình
+    const INITIAL_STORES = [
+      "D'ON CAFE & BISTRO, 334 Tô Hiến Thành",
+      "Làm Tí, Food & Beer, 102/1 Đường Lê Lợi",
+      "Ốc Ngon Thiện Ý 3, 2 Đường Số 4",
+      "Ốc Đêm Chú Em | Quán Nhậu Gò Vấp",
+      "Ngọc Lan Mì Gia",
+      "Ốc Đêm Chú Đỉnh, 202 Đường số 8",
+      "Xích Lô Quán Lẩu Nướng Gò Vấp",
+      "The Moods Coffee & Tea Garden",
+      "QUÁN NHẬU BIA ƠI Q12 | Quán nhậu bia hơi",
+      "Lẩu Dê Tư Ký, 141 Vườn Lài",
+      "SEAWONDER, 220 Đường Hiệp Bình",
+      "CAM Nướng, Bình Lợi, 71 Quốc lộ 13",
+      "QUÁN A PHÁT 17 | MÓN ĐỒNG QUÊ"
+    ];
+
+    // Các quán mặc định có số lượng máy = 2
+    const DEFAULT_TWO_MACHINE_KEYWORDS = [
+      "lẩu dê tư ký",
+      "tư ký",
+      "ốc ngon thiện ý",
+      "thiện ý",
+      "xích lô"
+    ];
+
+    function isTwoMachineStore(storeName) {
+      if (!storeName) return false;
+      const lower = storeName.toLowerCase();
+      return DEFAULT_TWO_MACHINE_KEYWORDS.some(k => lower.includes(k));
+    }
+
+    // Làm sạch khoảng trắng dư thừa, tab, newline
+    function cleanSpaces(str) {
+      if (str === null || str === undefined) return "";
+      return String(str).replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    let storeOptions = [];
+    let storeQtyMap = {}; // Lưu số máy mặc định cho từng quán: { [tên quán viết thường]: 1 hoặc 2 }
+    let records = [];
+    let loadedFileName = "Copy of Hoa Tháng 8.xlsx";
+    let defaultUnitPrice = 20000;
+
+    // Lấy số lượng máy mặc định của một quán
+    function getStoreDefaultQty(storeName) {
+      if (!storeName) return 1;
+      const key = cleanSpaces(storeName).toLowerCase();
+      if (storeQtyMap[key] !== undefined) {
+        return Number(storeQtyMap[key]);
+      }
+      return isTwoMachineStore(storeName) ? 2 : 1;
+    }
+
+    // Quản lý chế độ sáng/tối
+    function initTheme() {
+      const savedTheme = localStorage.getItem("expense_theme");
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('themeIcon').textContent = '☀️';
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.getElementById('themeIcon').textContent = '🌙';
+      }
+    }
+
+    document.getElementById('btnToggleTheme').addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem("expense_theme", isDark ? 'dark' : 'light');
+      document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+    });
+
+    try {
+      const pwaManifest = {
+        name: "Sổ Chấm Máy Quán",
+        short_name: "Chấm Công",
+        start_url: "./",
+        display: "standalone",
+        background_color: "#059669",
+        theme_color: "#059669",
+        icons: [
+          { src: "https://placehold.co/192x192/059669/ffffff?text=CC", sizes: "192x192", type: "image/png" },
+          { src: "https://placehold.co/512x512/059669/ffffff?text=CC", sizes: "512x512", type: "image/png" }
+        ]
+      };
+      const manifestBlob = new Blob([JSON.stringify(pwaManifest)], { type: 'application/json' });
+      document.getElementById('pwaManifestLink').setAttribute('href', URL.createObjectURL(manifestBlob));
+    } catch (e) {}
+
+    function getTodayString() {
+      const d = new Date();
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function updateUnitPriceLabels() {
+      const p = defaultUnitPrice;
+      document.querySelectorAll('.unitPreview1').forEach(el => el.textContent = `${(p / 1000).toFixed(0)}k`);
+      document.querySelectorAll('.unitPreview2').forEach(el => el.textContent = `${((p * 2) / 1000).toFixed(0)}k`);
+      document.getElementById('cardPriceSubtitle').textContent = `Đơn giá mặc định: ${p.toLocaleString('vi-VN')} đ`;
+    }
+
+    function loadSavedState() {
+      // Tải đơn giá mặc định
+      const savedPrice = localStorage.getItem("expense_default_price");
+      if (savedPrice) {
+        defaultUnitPrice = parseInt(savedPrice, 10) || 20000;
+        document.getElementById("inputUnitPrice").value = defaultUnitPrice;
+      }
+      updateUnitPriceLabels();
+
+      // Tải danh mục quán
+      const savedStores = localStorage.getItem("expense_stores_v2");
+      if (savedStores) {
+        try {
+          storeOptions = JSON.parse(savedStores).map(cleanSpaces).filter(Boolean);
+        } catch (e) {
+          storeOptions = [...INITIAL_STORES];
+        }
+      } else {
+        storeOptions = [...INITIAL_STORES];
+      }
+
+      // Tải bản đồ số máy mặc định của quán
+      const savedStoreQtyMap = localStorage.getItem("expense_store_qty_map_v2");
+      if (savedStoreQtyMap) {
+        try {
+          storeQtyMap = JSON.parse(savedStoreQtyMap);
+        } catch (e) {
+          storeQtyMap = {};
+        }
+      } else {
+        storeQtyMap = {};
+      }
+
+      // Khởi tạo mặc định 2 máy cho 3 quán quy định nếu chưa có
+      INITIAL_STORES.forEach(st => {
+        const key = cleanSpaces(st).toLowerCase();
+        if (storeQtyMap[key] === undefined) {
+          storeQtyMap[key] = isTwoMachineStore(st) ? 2 : 1;
+        }
+      });
+
+      // Tải danh sách bản ghi
+      const savedRecords = localStorage.getItem("expense_records_v2");
+      if (savedRecords) {
+        try {
+          records = JSON.parse(savedRecords);
+          records.forEach(r => {
+            r.store = cleanSpaces(r.store);
+            r.note = cleanSpaces(r.note);
+            if (!r.price || Number(r.price) <= 100) r.price = defaultUnitPrice;
+            if (!r.qty) r.qty = 1;
+            r.total = Number(r.qty) * Number(r.price);
+          });
+        } catch (e) {
+          records = [];
+        }
+      } else {
+        records = [
+          { date: "2026-09-03", store: "QUÁN A PHÁT 17 | MÓN ĐỒNG QUÊ", price: 20000, qty: 1, total: 20000, note: "" },
+          { date: "2026-09-03", store: "D'ON CAFE & BISTRO, 334 Tô Hiến Thành", price: 20000, qty: 1, total: 20000, note: "" },
+          { date: "2026-09-04", store: "CAM Nướng, Bình Lợi, 71 Quốc lộ 13", price: 20000, qty: 1, total: 20000, note: "" },
+          { date: "2026-09-04", store: "Làm Tí, Food & Beer, 102/1 Đường Lê Lợi", price: 20000, qty: 1, total: 20000, note: "" },
+          { date: "2026-09-04", store: "Xích Lô Quán Lẩu Nướng Gò Vấp", price: 20000, qty: 2, total: 40000, note: "Đặt 2 máy" },
+          { date: "2026-09-04", store: "Lẩu Dê Tư Ký, 141 Vườn Lài", price: 20000, qty: 2, total: 40000, note: "" }
+        ];
+      }
+
+      const savedName = localStorage.getItem("expense_filename_v2");
+      if (savedName) loadedFileName = savedName;
+    }
+
+    function saveState() {
+      localStorage.setItem("expense_stores_v2", JSON.stringify(storeOptions));
+      localStorage.setItem("expense_store_qty_map_v2", JSON.stringify(storeQtyMap));
+      localStorage.setItem("expense_records_v2", JSON.stringify(records));
+      localStorage.setItem("expense_filename_v2", loadedFileName);
+      localStorage.setItem("expense_default_price", defaultUnitPrice);
+    }
+
+    function checkAndAutoSelectStoreQty() {
+      const selected = document.getElementById("selectStore").value;
+      const notice = document.getElementById("storeAutoQtyNotice");
+      const defaultQty = getStoreDefaultQty(selected);
+      if (defaultQty === 2) {
+        document.getElementById("radioQty2").checked = true;
+        notice.classList.remove("hidden");
+        notice.textContent = "⚡ Quán này tự động chọn 2 máy theo cấu hình";
+      } else {
+        document.getElementById("radioQty1").checked = true;
+        notice.classList.add("hidden");
+      }
+    }
+
+    function renderStoreDropdown() {
+      const select = document.getElementById("selectStore");
+      const currentSelected = select.value;
+      select.innerHTML = "";
+
+      storeOptions.forEach((st, idx) => {
+        const opt = document.createElement("option");
+        opt.value = st;
+        const dQty = getStoreDefaultQty(st);
+        const badge2 = dQty === 2 ? " [⚡ 2 máy]" : "";
+        opt.textContent = `${idx + 1}. ${st}${badge2}`;
+        select.appendChild(opt);
+      });
+
+      if (currentSelected && storeOptions.includes(currentSelected)) {
+        select.value = currentSelected;
+      }
+      document.getElementById("cardStoreCount").textContent = storeOptions.length;
+      checkAndAutoSelectStoreQty();
+    }
+
+    document.getElementById("selectStore").addEventListener("change", checkAndAutoSelectStoreQty);
+
+    document.getElementById("inputUnitPrice").addEventListener("input", function() {
+      const val = parseInt(this.value, 10);
+      if (val && val > 0) {
+        defaultUnitPrice = val;
+        saveState();
+        updateUnitPriceLabels();
+      }
+    });
+
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      let bgClass = "bg-slate-800 text-white";
+      if (type === "error") bgClass = "bg-red-700 text-white";
+      if (type === "warning") bgClass = "bg-amber-600 text-white";
+      if (type === "success") bgClass = "bg-emerald-700 text-white";
+
+      toast.className = `pointer-events-auto flex items-center space-x-2 px-3.5 py-2.5 rounded-xl shadow-xl text-xs font-medium transition-all transform duration-200 translate-y-2 opacity-0 ${bgClass}`;
+      toast.innerHTML = `<span>${message}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => toast.classList.remove("translate-y-2", "opacity-0"));
+      setTimeout(() => {
+        toast.classList.add("translate-y-2", "opacity-0");
+        setTimeout(() => toast.remove(), 250);
+      }, 3500);
+    }
+
+    let pendingModalAction = null;
+    function openModal({ title, message, onConfirm }) {
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalMessage").textContent = message;
+      pendingModalAction = onConfirm;
+
+      const overlay = document.getElementById("modalOverlay");
+      overlay.classList.remove("hidden");
+      requestAnimationFrame(() => overlay.classList.remove("opacity-0"));
+    }
+
+    function closeModal() {
+      const overlay = document.getElementById("modalOverlay");
+      overlay.classList.add("opacity-0");
+      setTimeout(() => {
+        overlay.classList.add("hidden");
+        pendingModalAction = null;
+      }, 200);
+    }
+
+    document.getElementById("modalBtnCancel").addEventListener("click", closeModal);
+    document.getElementById("modalBtnConfirm").addEventListener("click", () => {
+      if (typeof pendingModalAction === "function") pendingModalAction();
+      closeModal();
+    });
+
+    function getISOWeekNumber(d) {
+      const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = date.getUTCDay() || 7;
+      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+      return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+    }
+
+    function getDayOfWeekVietnamese(dateStr) {
+      const d = new Date(dateStr);
+      const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+      return days[d.getDay()];
+    }
+
+    function updateStatisticsAndReport() {
+      const totalMachines = records.reduce((sum, r) => sum + Number(r.qty), 0);
+      const totalAmount = records.reduce((sum, r) => sum + Number(r.total), 0);
+
+      document.getElementById("cardTotalMachines").textContent = totalMachines.toLocaleString('vi-VN');
+      document.getElementById("cardTotalAmount").textContent = totalAmount.toLocaleString('vi-VN') + " đ";
+      document.getElementById("cardTotalRows").textContent = records.length;
+
+      const container = document.getElementById("summaryReportContainer");
+      if (records.length === 0) {
+        container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">Chưa có dữ liệu nào.</div>`;
+        return;
+      }
+
+      const sorted = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const monthGroups = {};
+
+      sorted.forEach(rec => {
+        const dt = new Date(rec.date);
+        const monthKey = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = `Tháng ${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
+
+        if (!monthGroups[monthKey]) {
+          monthGroups[monthKey] = {
+            name: monthName,
+            totalAmount: 0,
+            totalMachines: 0,
+            twoWeekPeriods: {}
+          };
+        }
+
+        monthGroups[monthKey].totalAmount += Number(rec.total);
+        monthGroups[monthKey].totalMachines += Number(rec.qty);
+
+        const isoWeek = getISOWeekNumber(dt);
+        const cycleIndex = Math.floor((isoWeek - 1) / 2);
+        const startWeek = cycleIndex * 2 + 1;
+        const endWeek = startWeek + 1;
+        const cycleKey = `W${startWeek}-${endWeek}`;
+
+        if (!monthGroups[monthKey].twoWeekPeriods[cycleKey]) {
+          monthGroups[monthKey].twoWeekPeriods[cycleKey] = {
+            label: `Đợt 2 Tuần (Tuần ${startWeek} & Tuần ${endWeek})`,
+            totalAmount: 0,
+            totalMachines: 0,
+            count: 0
+          };
+        }
+
+        monthGroups[monthKey].twoWeekPeriods[cycleKey].totalAmount += Number(rec.total);
+        monthGroups[monthKey].twoWeekPeriods[cycleKey].totalMachines += Number(rec.qty);
+        monthGroups[monthKey].twoWeekPeriods[cycleKey].count += 1;
+      });
+
+      let html = "";
+      Object.keys(monthGroups).forEach(mKey => {
+        const mData = monthGroups[mKey];
+        html += `
+          <div class="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800 shadow-xs">
+            <div class="bg-slate-800 dark:bg-slate-950 text-white px-3.5 py-2 flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span class="font-bold text-xs uppercase">${mData.name}</span>
+                <span class="bg-white/15 text-[10px] px-1.5 py-0.5 rounded-full">${mData.totalMachines} máy</span>
+              </div>
+              <div class="text-xs font-bold text-amber-300">
+                ${mData.totalAmount.toLocaleString('vi-VN')} đ
+              </div>
+            </div>
+            <div class="p-2.5 space-y-2 bg-slate-50/50 dark:bg-slate-900/40">
+        `;
+
+        Object.keys(mData.twoWeekPeriods).forEach((cKey, idx) => {
+          const period = mData.twoWeekPeriods[cKey];
+          const pct = Math.round((period.totalAmount / (mData.totalAmount || 1)) * 100);
+
+          html += `
+            <div class="bg-white dark:bg-slate-800 rounded-lg p-2.5 border border-slate-200 dark:border-slate-700">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-semibold text-slate-800 dark:text-slate-200">Kỳ ${idx + 1}: ${period.label}</span>
+                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">${period.totalAmount.toLocaleString('vi-VN')} đ</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mb-1">
+                <div class="bg-emerald-500 h-full rounded-full" style="width: ${pct}%"></div>
+              </div>
+              <div class="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+                <span>Chiếm ${pct}% tháng</span>
+                <span><strong>${period.totalMachines}</strong> máy (${period.count} quán)</span>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `</div></div>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // HIỂN THỊ BẢNG THEO TỪNG NGÀY ĐỘC LẬP
+    function renderTable() {
+      const container = document.getElementById("groupedTableContainer");
+      const filter = cleanSpaces(document.getElementById("filterKeyword").value).toLowerCase();
+
+      let filtered = records.map((rec, origIdx) => ({ ...rec, originalIndex: origIdx }));
+      if (filter) {
+        filtered = filtered.filter(r => r.store.toLowerCase().includes(filter) || r.date.includes(filter));
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="py-8 text-center text-slate-400 italic text-xs">Không tìm thấy bản ghi nào.</div>`;
+        return;
+      }
+
+      // Nhóm theo ngày
+      const dayMap = {};
+      filtered.forEach(item => {
+        if (!dayMap[item.date]) dayMap[item.date] = [];
+        dayMap[item.date].push(item);
+      });
+
+      // Sắp xếp ngày giảm dần (ngày mới nhất lên đầu)
+      const sortedDates = Object.keys(dayMap).sort((a, b) => new Date(b) - new Date(a));
+
+      let html = "";
+      sortedDates.forEach(dStr => {
+        const items = dayMap[dStr];
+        const [y, m, d] = dStr.split('-');
+        const dayOfWeek = getDayOfWeekVietnamese(dStr);
+        const dayTotal = items.reduce((s, it) => s + Number(it.total), 0);
+        const dayMachines = items.reduce((s, it) => s + Number(it.qty), 0);
+
+        html += `
+          <div class="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800 shadow-xs mb-3">
+            <!-- Header của từng ngày -->
+            <div class="bg-slate-100 dark:bg-slate-900 px-3 py-2 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-1.5">
+              <div class="flex items-center space-x-2">
+                <span class="px-2 py-0.5 bg-emerald-600 text-white rounded-md text-[11px] font-bold">
+                  ${d}/${m}/${y}
+                </span>
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">${dayOfWeek}</span>
+                <span class="text-[11px] text-slate-400">(${items.length} quán)</span>
+              </div>
+              <div class="flex items-center space-x-2 text-xs">
+                <span class="bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold px-2 py-0.5 rounded">
+                  ${dayMachines} máy
+                </span>
+                <span class="font-extrabold text-slate-800 dark:text-slate-100">
+                  ${dayTotal.toLocaleString('vi-VN')} đ
+                </span>
+              </div>
+            </div>
+
+            <!-- Bảng danh sách của ngày đó -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 uppercase text-[10px] border-b border-slate-100 dark:border-slate-700/60">
+                  <tr>
+                    <th class="py-1.5 px-2.5">Quán</th>
+                    <th class="py-1.5 px-2 text-right">Đơn giá</th>
+                    <th class="py-1.5 px-2 text-center">Máy</th>
+                    <th class="py-1.5 px-2 text-right">Thành tiền</th>
+                    <th class="py-1.5 px-2">Ghi chú</th>
+                    <th class="py-1.5 px-2 text-center">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50 text-slate-700 dark:text-slate-300">
+        `;
+
+        items.forEach(r => {
+          html += `
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+              <td class="py-2 px-2.5 font-medium text-slate-800 dark:text-slate-100 max-w-[160px] truncate" title="${r.store}">
+                ${r.store}
+              </td>
+              <td class="py-2 px-2 text-right text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                ${Number(r.price).toLocaleString('vi-VN')} đ
+              </td>
+              <td class="py-2 px-2 text-center whitespace-nowrap">
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${r.qty == 2 ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}">
+                  ${r.qty} máy
+                </span>
+              </td>
+              <td class="py-2 px-2 text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                ${Number(r.total).toLocaleString('vi-VN')} đ
+              </td>
+              <td class="py-2 px-2 text-slate-400 max-w-[100px] truncate" title="${r.note || ''}">
+                ${r.note || '-'}
+              </td>
+              <td class="py-2 px-2 text-center whitespace-nowrap">
+                <button onclick="openEditModal(${r.originalIndex})" class="p-1 text-blue-500 hover:text-blue-700 mr-1" title="Chỉnh sửa dòng này">
+                  <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </button>
+                <button onclick="deleteSingleRecord(${r.originalIndex})" class="p-1 text-slate-400 hover:text-red-500" title="Xóa dòng này">
+                  ✕
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+
+        html += `
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // Modal chỉnh sửa thông số bản ghi
+    window.openEditModal = function(index) {
+      const rec = records[index];
+      if (!rec) return;
+
+      document.getElementById("editRecordIndex").value = index;
+      document.getElementById("editDate").value = rec.date;
+      document.getElementById("editStore").value = rec.store;
+      document.getElementById("editPrice").value = rec.price;
+      document.getElementById("editQty").value = rec.qty;
+      document.getElementById("editNote").value = rec.note || "";
+
+      const overlay = document.getElementById("editModalOverlay");
+      overlay.classList.remove("hidden");
+      requestAnimationFrame(() => overlay.classList.remove("opacity-0"));
+    };
+
+    function closeEditModal() {
+      const overlay = document.getElementById("editModalOverlay");
+      overlay.classList.add("opacity-0");
+      setTimeout(() => overlay.classList.add("hidden"), 200);
+    }
+
+    document.getElementById("btnCancelEdit").addEventListener("click", closeEditModal);
+    document.getElementById("btnDismissEdit").addEventListener("click", closeEditModal);
+
+    document.getElementById("editRecordForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const index = parseInt(document.getElementById("editRecordIndex").value, 10);
+      const newDate = document.getElementById("editDate").value;
+      const newStore = cleanSpaces(document.getElementById("editStore").value);
+      const newPrice = parseInt(document.getElementById("editPrice").value, 10) || 20000;
+      const newQty = parseInt(document.getElementById("editQty").value, 10) || 1;
+      const newNote = cleanSpaces(document.getElementById("editNote").value);
+
+      if (!newDate || !newStore) {
+        showToast("Vui lòng điền ngày và tên quán!", "warning");
+        return;
+      }
+
+      // Kiểm tra trùng lặp nếu sửa đổi thành quán/ngày đã có ở dòng khác
+      const isDup = records.some((r, i) => i !== index && r.date === newDate && r.store.toLowerCase() === newStore.toLowerCase());
+      if (isDup) {
+        showToast(`Quán "${newStore}" trong ngày ${newDate} đã có trong danh sách!`, "error");
+        return;
+      }
+
+      records[index] = {
+        date: newDate,
+        store: newStore,
+        price: newPrice,
+        qty: newQty,
+        total: newPrice * newQty,
+        note: newNote
+      };
+
+      if (!storeOptions.some(st => st.toLowerCase() === newStore.toLowerCase())) {
+        storeOptions.push(newStore);
+        renderStoreDropdown();
+      }
+
+      saveState();
+      renderTable();
+      updateStatisticsAndReport();
+      closeEditModal();
+      showToast("Đã cập nhật thông số!", "success");
+    });
+
+    // Thêm bản ghi đơn
+    document.getElementById("recordForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const inputDate = document.getElementById("inputDate").value;
+      const selectStore = cleanSpaces(document.getElementById("selectStore").value);
+      const radioQty = document.querySelector('input[name="radioQty"]:checked').value;
+      const inputNote = cleanSpaces(document.getElementById("inputNote").value);
+      const unitPrice = parseInt(document.getElementById("inputUnitPrice").value, 10) || defaultUnitPrice;
+
+      if (!inputDate || !selectStore) {
+        showToast("Vui lòng điền đầy đủ ngày và quán!", "warning");
+        return;
+      }
+
+      // Kiểm tra trùng lặp quán trong ngày
+      const isDuplicate = records.some(r => r.date === inputDate && r.store.toLowerCase() === selectStore.toLowerCase());
+      if (isDuplicate) {
+        const [y, m, d] = inputDate.split('-');
+        showToast(`Lỗi: Ngày ${d}/${m}, quán "${selectStore}" đã có rồi!`, "error");
+        return;
+      }
+
+      const qty = parseInt(radioQty, 10);
+      const total = qty * unitPrice;
+
+      records.unshift({
+        date: inputDate,
+        store: selectStore,
+        price: unitPrice,
+        qty: qty,
+        total: total,
+        note: inputNote
+      });
+
+      saveState();
+      renderTable();
+      updateStatisticsAndReport();
+      document.getElementById("inputNote").value = "";
+      showToast(`Đã thêm: ${selectStore}`, "success");
+    });
+
+    // THÊM NHANH TẤT CẢ CÁC QUÁN TRONG OPTION CHO NGÀY ĐƯỢC CHỌN
+    document.getElementById("btnQuickAddAll").addEventListener("click", () => {
+      const chosenDate = document.getElementById("inputDate").value;
+      if (!chosenDate) {
+        showToast("Vui lòng chọn ngày trước!", "warning");
+        return;
+      }
+
+      const unitPrice = parseInt(document.getElementById("inputUnitPrice").value, 10) || defaultUnitPrice;
+      let addedCount = 0;
+      let skippedCount = 0;
+
+      storeOptions.forEach(storeName => {
+        const exists = records.some(r => r.date === chosenDate && r.store.toLowerCase() === storeName.toLowerCase());
+        if (exists) {
+          skippedCount++;
+        } else {
+          const qty = getStoreDefaultQty(storeName);
+          records.push({
+            date: chosenDate,
+            store: storeName,
+            price: unitPrice,
+            qty: qty,
+            total: qty * unitPrice,
+            note: ""
+          });
+          addedCount++;
+        }
+      });
+
+      if (addedCount > 0) {
+        saveState();
+        renderTable();
+        updateStatisticsAndReport();
+        const [y, m, d] = chosenDate.split('-');
+        showToast(`Đã thêm ${addedCount} quán cho ngày ${d}/${m} (bỏ qua ${skippedCount} quán đã có)`, "success");
+      } else {
+        showToast("Tất cả các quán trong ngày này đã có đủ!", "warning");
+      }
+    });
+
+    document.getElementById("btnToggleNewStore").addEventListener("click", () => {
+      const box = document.getElementById("newStoreBox");
+      box.classList.toggle("hidden");
+      if (!box.classList.contains("hidden")) document.getElementById("inputNewStoreName").focus();
+    });
+
+    document.getElementById("btnAddNewStoreSubmit").addEventListener("click", () => {
+      const nameInput = document.getElementById("inputNewStoreName");
+      const name = cleanSpaces(nameInput.value);
+      if (!name) return;
+
+      const defaultQtyRadio = document.querySelector('input[name="newStoreDefaultQty"]:checked');
+      const defaultQty = defaultQtyRadio ? parseInt(defaultQtyRadio.value, 10) : 1;
+
+      // Lưu số máy mặc định cho quán này
+      storeQtyMap[name.toLowerCase()] = defaultQty;
+
+      if (!storeOptions.some(st => st.toLowerCase() === name.toLowerCase())) {
+        storeOptions.push(name);
+      }
+
+      saveState();
+      renderStoreDropdown();
+      document.getElementById("selectStore").value = name;
+      nameInput.value = "";
+      document.getElementById("newStoreBox").classList.add("hidden");
+      checkAndAutoSelectStoreQty();
+      showToast(`Đã lưu quán "${name}" với mặc định ${defaultQty} máy!`, "success");
+    });
+
+    window.deleteSingleRecord = function(index) {
+      openModal({
+        title: "Xóa bản ghi",
+        message: `Xóa quán "${records[index].store}" ngày ${records[index].date}?`,
+        onConfirm: () => {
+          records.splice(index, 1);
+          saveState();
+          renderTable();
+          updateStatisticsAndReport();
+          showToast("Đã xóa dòng!", "info");
+        }
+      });
+    };
+
+    document.getElementById("btnClearAll").addEventListener("click", () => {
+      if (records.length === 0) return;
+      openModal({
+        title: "Xóa tất cả",
+        message: "Bạn có chắc muốn xóa toàn bộ danh sách đã lưu?",
+        onConfirm: () => {
+          records = [];
+          saveState();
+          renderTable();
+          updateStatisticsAndReport();
+          showToast("Đã làm trống danh sách!", "info");
+        }
+      });
+    });
+
+    document.getElementById("filterKeyword").addEventListener("input", renderTable);
+    document.getElementById("btnRefreshStats").addEventListener("click", () => {
+      updateStatisticsAndReport();
+      showToast("Đã cập nhật báo cáo!", "info");
+    });
+
+    function parseSafePrice(rawVal) {
+      if (!rawVal) return defaultUnitPrice;
+      if (typeof rawVal === 'number') return rawVal <= 100 && rawVal > 0 ? rawVal * 1000 : rawVal;
+      const cleaned = cleanSpaces(rawVal).replace(/[^\d]/g, '');
+      let num = parseInt(cleaned, 10);
+      if (isNaN(num) || num <= 0) return defaultUnitPrice;
+      if (num <= 100) num *= 1000;
+      return num;
+    }
+
+    function parseSafeQty(rawVal, storeName) {
+      if (!rawVal) return getStoreDefaultQty(storeName);
+      const num = parseInt(cleanSpaces(rawVal).replace(/[^\d]/g, ''), 10);
+      return num === 2 ? 2 : (num === 1 ? 1 : getStoreDefaultQty(storeName));
+    }
+
+    // ĐỌC FILE EXCEL NÂNG CAO - LOẠI BỎ KHOẢNG CÁCH, DÒNG TRỐNG
+    document.getElementById("excelFileInput").addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      loadedFileName = cleanSpaces(file.name);
+      const reader = new FileReader();
+
+      reader.onload = function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+
+          let imported = 0, duplicates = 0;
+          for (let i = 2; i < rawRows.length; i++) {
+            const row = rawRows[i];
+            if (!row || !Array.isArray(row) || row.length === 0) continue;
+
+            let dateRaw = row[0];
+            let storeRaw = row[1];
+            let priceRaw = row[2];
+            let qtyRaw = row[3];
+            let noteRaw = row[5];
+
+            let storeName = cleanSpaces(storeRaw);
+            if (!storeName || storeName === "" || storeName.toLowerCase().startsWith("tổng")) continue;
+
+            let parsedDate = "";
+            if (dateRaw instanceof Date) {
+              parsedDate = dateRaw.toISOString().split('T')[0];
+            } else if (dateRaw) {
+              const str = cleanSpaces(dateRaw);
+              if (str.match(/^\d{4}-\d{2}-\d{2}/)) {
+                parsedDate = str.substring(0, 10);
+              } else if (str.match(/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}/)) {
+                const parts = str.split(/[\/-]/);
+                parsedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+              } else {
+                const d = new Date(str);
+                parsedDate = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : getTodayString();
+              }
+            } else {
+              continue; // Bỏ qua nếu không có ngày
+            }
+
+            const qty = parseSafeQty(qtyRaw, storeName);
+            const price = parseSafePrice(priceRaw);
+            const note = cleanSpaces(noteRaw);
+
+            // Kiểm tra trùng lặp
+            if (records.some(r => r.date === parsedDate && r.store.toLowerCase() === storeName.toLowerCase())) {
+              duplicates++;
+              continue;
+            }
+
+            if (!storeOptions.some(st => st.toLowerCase() === storeName.toLowerCase())) {
+              storeOptions.push(storeName);
+            }
+
+            records.push({
+              date: parsedDate,
+              store: storeName,
+              price: price,
+              qty: qty,
+              total: qty * price,
+              note: note
+            });
+            imported++;
+          }
+
+          saveState();
+          renderStoreDropdown();
+          renderTable();
+          updateStatisticsAndReport();
+
+          const banner = document.getElementById("fileStatusBanner");
+          banner.classList.remove("hidden");
+          document.getElementById("fileStatusText").innerHTML = `Đã nạp file <strong>${loadedFileName}</strong>: thêm ${imported} dòng (bỏ qua ${duplicates} dòng trùng/khoảng trống).`;
+          showToast(`Nạp file thành công! Thêm ${imported} quán`, "success");
+        } catch (err) {
+          console.error(err);
+          showToast("Lỗi khi đọc file Excel!", "error");
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+      this.value = "";
+    });
+
+    document.getElementById("btnCloseBanner").addEventListener("click", () => {
+      document.getElementById("fileStatusBanner").classList.add("hidden");
+    });
+
+    // XUẤT FILE EXCEL: TÁCH RIÊNG TỪNG NGÀY KÈM DÒNG TỔNG PHỤ
+    document.getElementById("btnExportExcel").addEventListener("click", function() {
+      if (records.length === 0) {
+        showToast("Chưa có dữ liệu nào để xuất!", "warning");
+        return;
+      }
+
+      const sorted = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const wsData = [];
+
+      // Hàng 1: Công thức SUBTOTAL tổng trên cùng giống file gốc
+      wsData.push([
+        "", "", "",
+        { f: `SUBTOTAL(9,D3:D2000)` },
+        { f: `SUBTOTAL(9,E3:E2000)` },
+        ""
+      ]);
+
+      // Hàng 2: Tiêu đề cột chuẩn
+      wsData.push(['Ngày', 'Tên quán', 'Giá', 'SL máy', 'thành tiền', 'ghi chú']);
+
+      let currentRowIdx = 3;
+      let lastDate = null;
+
+      sorted.forEach((r, idx) => {
+        // Tách khoảng trống giữa các ngày khác nhau cho dễ nhìn
+        if (lastDate !== null && r.date !== lastDate) {
+          wsData.push(["", `--- Hết ngày ${lastDate} ---`, "", "", "", ""]);
+          currentRowIdx++;
+        }
+
+        wsData.push([
+          r.date,
+          r.store,
+          r.price,
+          r.qty,
+          { f: `D${currentRowIdx}*C${currentRowIdx}` },
+          r.note || ""
+        ]);
+
+        lastDate = r.date;
+        currentRowIdx++;
+      });
+
+      // Cập nhật lại dải subtotal chính xác
+      wsData[0][3] = { f: `SUBTOTAL(9,D3:D${currentRowIdx})` };
+      wsData[0][4] = { f: `SUBTOTAL(9,E3:E${currentRowIdx})` };
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      ws['!cols'] = [
+        { wch: 14 }, { wch: 38 }, { wch: 12 },
+        { wch: 10 }, { wch: 14 }, { wch: 25 }
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      XLSX.writeFile(wb, loadedFileName || "Copy of Hoa Thang 8.xlsx");
+      showToast(`Đã xuất file Excel với phân cách từng ngày!`, "success");
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      initTheme();
+      document.getElementById("inputDate").value = getTodayString();
+      loadSavedState();
+      renderStoreDropdown();
+      renderTable();
+      updateStatisticsAndReport();
+    });
+  </script>
+</body>
+</html>
