@@ -147,18 +147,45 @@
               <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
               <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">Nhập Liệu Nhanh</h2>
             </div>
-            <span class="text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-md">Chống trùng lặp</span>
+            <span class="text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-md">Quản lý theo Tuyến</span>
           </div>
 
-          <!-- Nút THÊM NHANH TẤT CẢ QUÁN CHO NGÀY ĐANG CHỌN -->
-          <div class="mb-3.5 p-2.5 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl flex items-center justify-between">
-            <div class="text-[11px] leading-tight">
-              <span class="font-bold text-emerald-800 dark:text-emerald-300">⚡ Chấm công cả ngày</span>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400">Tự điền tất cả các quán (Tư Ký, Thiện Ý, Xích Lô x2)</p>
+          <!-- Khu vực Chấm công theo Tuyến (Hỗ trợ chọn tuyến, thêm tuyến mới, thêm nhanh cả tuyến) -->
+          <div class="mb-3.5 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center space-x-1">
+                <span>⚡ Chấm công theo Tuyến</span>
+              </span>
+              <div class="flex items-center space-x-2">
+                <button type="button" id="btnToggleNewRoute" class="text-[11px] font-semibold text-teal-700 dark:text-teal-300 hover:underline">
+                  + Thêm tuyến
+                </button>
+                <button type="button" id="btnDeleteRoute" class="text-[11px] font-semibold text-red-500 hover:underline" title="Xóa tuyến đang chọn">
+                  Xóa tuyến
+                </button>
+              </div>
             </div>
-            <button type="button" id="btnQuickAddAll" class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition shadow-xs whitespace-nowrap">
-              + Thêm cả ngày
-            </button>
+
+            <!-- Ô tạo tuyến mới (ẩn mặc định) -->
+            <div id="newRouteBox" class="hidden flex items-center space-x-1.5 pt-1">
+              <input type="text" id="inputNewRouteName" placeholder="Nhập tên tuyến mới (vd: Quận 7)..." class="flex-1 text-xs bg-white dark:bg-slate-700 border border-emerald-300 dark:border-emerald-700 text-slate-800 dark:text-slate-100 rounded-lg px-2.5 py-1.5 focus:outline-none">
+              <button type="button" id="btnAddNewRouteSubmit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs px-2.5 py-1.5 rounded-lg active:scale-95 transition whitespace-nowrap">
+                Lưu Tuyến
+              </button>
+            </div>
+
+            <!-- Chọn tuyến & Nút chấm công cả tuyến -->
+            <div class="flex items-center space-x-2">
+              <select id="selectRoute" class="flex-1 min-w-0 bg-white dark:bg-slate-700 border border-emerald-300 dark:border-emerald-700 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none">
+                <!-- Render tự động các tuyến -->
+              </select>
+              <button type="button" id="btnQuickAddAll" class="shrink-0 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition shadow-xs whitespace-nowrap">
+                + Thêm cả tuyến
+              </button>
+            </div>
+            <p id="routeInfoSummary" class="text-[10px] text-slate-500 dark:text-slate-400">
+              Đang chọn tuyến có 15 điểm.
+            </p>
           </div>
 
           <form id="recordForm" class="space-y-3.5">
@@ -182,10 +209,10 @@
             <div>
               <div class="flex items-center justify-between mb-1">
                 <label class="text-[11px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                  2. Tên Quán <span class="text-red-500">*</span>
+                  2. Tên Quán <span class="text-slate-400 font-normal normal-case" id="lblCurrentRouteTag">(Tuyến Gò Vấp)</span> <span class="text-red-500">*</span>
                 </label>
                 <button type="button" id="btnToggleNewStore" class="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-semibold flex items-center space-x-0.5">
-                  <span>+ Thêm quán mới</span>
+                  <span>+ Thêm quán vào tuyến</span>
                 </button>
               </div>
 
@@ -215,9 +242,9 @@
               <!-- Ô chọn quán kèm nút xóa quán đang chọn -->
               <div class="flex items-center space-x-2">
                 <select id="selectStore" required class="flex-1 min-w-0 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 truncate">
-                  <!-- Nạp tự động từ danh sách 13 quán -->
+                  <!-- Nạp tự động từ danh sách tuyến hiện tại -->
                 </select>
-                <button type="button" id="btnDeleteStoreOption" class="shrink-0 p-2 sm:px-2.5 sm:py-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl border border-slate-300 dark:border-slate-600 active:scale-95 transition flex items-center space-x-1" title="Xóa quán đang chọn khỏi danh sách">
+                <button type="button" id="btnDeleteStoreOption" class="shrink-0 p-2 sm:px-2.5 sm:py-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl border border-slate-300 dark:border-slate-600 active:scale-95 transition flex items-center space-x-1" title="Xóa quán đang chọn khỏi tuyến này">
                   <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                   </svg>
@@ -370,30 +397,72 @@
   </div>
 
   <script>
-    // 13 Quán mặc định từ 3 ảnh lộ trình
-    const INITIAL_STORES = [
-      "D'ON CAFE & BISTRO, 334 Tô Hiến Thành",
-      "Làm Tí, Food & Beer, 102/1 Đường Lê Lợi",
-      "Ốc Ngon Thiện Ý 3, 2 Đường Số 4",
-      "Ốc Đêm Chú Em | Quán Nhậu Gò Vấp",
-      "Ngọc Lan Mì Gia",
-      "Ốc Đêm Chú Đỉnh, 202 Đường số 8",
-      "Xích Lô Quán Lẩu Nướng Gò Vấp",
-      "The Moods Coffee & Tea Garden",
-      "QUÁN NHẬU BIA ƠI Q12 | Quán nhậu bia hơi",
-      "Lẩu Dê Tư Ký, 141 Vườn Lài",
-      "SEAWONDER, 220 Đường Hiệp Bình",
-      "CAM Nướng, Bình Lợi, 71 Quốc lộ 13",
-      "QUÁN A PHÁT 17 | MÓN ĐỒNG QUÊ"
-    ];
+    // Dữ liệu gốc mặc định theo các Tuyến Đường
+    const DEFAULT_ROUTES_DATA = {
+      "Gò Vấp": [
+        { name: "D'ON CAFE & BISTRO, 334 Tô Hiến Thành", qty: 1 },
+        { name: "Làm Tí, Food & Beer, 102/1 Đường Lê Lợi", qty: 1 },
+        { name: "Ốc Ngon Thiện Ý 3, 2 Đường Số 4", qty: 2 },
+        { name: "Ốc Đêm Chú Em | Quán Nhậu Gò Vấp", qty: 1 },
+        { name: "Ngọc Lan Mì Gia", qty: 1 },
+        { name: "Ốc Đêm Chú Đỉnh, 202 Đường số 8", qty: 1 },
+        { name: "Xích Lô Quán Lẩu Nướng Gò Vấp", qty: 2 },
+        { name: "The Moods Coffee & Tea Garden", qty: 1 },
+        { name: "QUÁN NHẬU BIA ƠI Q12 | Quán nhậu bia hơi", qty: 1 },
+        { name: "Lẩu Dê Tư Ký, 141 Vườn Lài", qty: 2 },
+        { name: "SEAWONDER, 220 Đường Hiệp Bình", qty: 1 },
+        { name: "CAM Nướng, Bình Lợi, 71 Quốc lộ 13", qty: 1 },
+        { name: "QUÁN A PHÁT 17 | MÓN ĐỒNG QUÊ", qty: 1 },
+        { name: "Cô tư cà mau 1", qty: 1 },
+        { name: "Quốc Dê 437 Q12", qty: 1 }
+      ],
+      "Hóc Môn": [
+        // 01: Khê Sắc Khế, Hậu Giang (1 máy)
+        { name: "Khê Sắc Khế, Hậu Giang", qty: 1 },
+        // (02: 17a Bến Lội -> BỎ RA theo yêu cầu)
+        // 03: Có ghi chú "bia hơi đức béo" -> Ưu tiên lấy ghi chú làm tên hiển thị (1 máy)
+        { name: "bia hơi đức béo", qty: 1 },
+        // 04: Hải Sản Bà Điểm (1 máy)
+        { name: "Hải Sản Bà Điểm, 143 Phan Văn Đối", qty: 1 },
+        // 05: Dê Tươi Bà Điểm (1 máy)
+        { name: "Dê Tươi Bà Điểm, 43/4D Ấp Tiền lân", qty: 1 },
+        // 06: Dốc Mơ Quán (1 máy)
+        { name: "Dốc Mơ Quán, 22 Đường Nguyễn Ảnh Thủ", qty: 1 },
+        // 07: Có ghi chú "Quen" -> Ưu tiên lấy ghi chú làm tên hiển thị (1 máy)
+        { name: "Quen", qty: 1 },
+        // 08: Ẩm Thực Kiên Phát 1 (1 máy)
+        { name: "Ẩm Thực Kiên Phát 1 | Quán Nhậu Bình Dân", qty: 1 },
+        // 09: Dê Tươi 79 (Trừ điểm 9 khỏi quy tắc lấy ghi chú -> giữ tên quán, 1 máy)
+        { name: "Dê Tươi 79, 45/5 Đường Song Hành", qty: 1 },
+        // 10: Xóm Mình Coffee (1 máy)
+        { name: "Xóm Mình Coffee, Số 45/2T", qty: 1 },
+        // 11: Buffet Lẩu Nướng Tèo Tí Tủn (Số 11 -> 2 máy)
+        { name: "Buffet Lẩu Nướng Tèo Tí Tủn", qty: 2 },
+        // 12: CON GÀ ĐEN (1 máy)
+        { name: "CON GÀ ĐEN, 17/3C Đường Song Hành", qty: 1 },
+        // 13: The Moods Garden (Trừ điểm 13 khỏi quy tắc lấy ghi chú "tư kỳ phải" -> giữ tên gốc, 1 máy)
+        { name: "The Moods Garden, 670 Trần Văn Mười", qty: 1 },
+        // 14: Có ghi chú "Mợ 2" -> Ưu tiên lấy ghi chú làm tên hiển thị, Số 14 -> 2 máy
+        { name: "Mợ 2", qty: 2 },
+        // 15: Tiệm cà phê Tĩnh 1 (Trừ điểm 15 khỏi quy tắc lấy ghi chú "tư kỳ trái" -> giữ tên gốc, 1 máy)
+        { name: "Tiệm cà phê Tĩnh 1, 45 Đồng Tâm", qty: 1 },
+        // 16: Có ghi chú "Nướng Dee" -> Ưu tiên lấy ghi chú làm tên hiển thị (1 máy)
+        { name: "Nướng Dee", qty: 1 },
+        // 17: À Lôi BBQ (Số 17 -> 2 máy)
+        { name: "À Lôi BBQ- Buffet Nướng Sân Vườn Tân Phú", qty: 2 }
+      ]
+    };
 
-    // Các quán mặc định có số lượng máy = 2
+    // Các quán mặc định có số lượng máy = 2 (dự phòng khi đọc từ file Excel)
     const DEFAULT_TWO_MACHINE_KEYWORDS = [
       "lẩu dê tư ký",
       "tư ký",
       "ốc ngon thiện ý",
       "thiện ý",
-      "xích lô"
+      "xích lô",
+      "tèo tí tủn",
+      "mợ 2",
+      "à lôi bbq"
     ];
 
     function isTwoMachineStore(storeName) {
@@ -408,19 +477,32 @@
       return String(str).replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
-    let storeOptions = [];
-    let storeQtyMap = {}; // Lưu số máy mặc định cho từng quán: { [tên quán viết thường]: 1 hoặc 2 }
+    let routesMap = {};       // Cấu trúc: { "Tên Tuyến": [ { name: "...", qty: 1 }, ... ] }
+    let currentRoute = "Gò Vấp";
     let records = [];
     let loadedFileName = "Copy of Hoa Tháng 8.xlsx";
     let defaultUnitPrice = 20000;
+
+    // Lấy danh sách quán của tuyến đang chọn
+    function getCurrentRouteStores() {
+      return routesMap[currentRoute] || [];
+    }
 
     // Lấy số lượng máy mặc định của một quán
     function getStoreDefaultQty(storeName) {
       if (!storeName) return 1;
       const key = cleanSpaces(storeName).toLowerCase();
-      if (storeQtyMap[key] !== undefined) {
-        return Number(storeQtyMap[key]);
+      // Tìm trong tuyến hiện tại trước
+      const currentList = getCurrentRouteStores();
+      const foundInCurrent = currentList.find(s => cleanSpaces(s.name).toLowerCase() === key);
+      if (foundInCurrent) return Number(foundInCurrent.qty) || 1;
+
+      // Tìm trong tất cả các tuyến khác
+      for (const rName of Object.keys(routesMap)) {
+        const found = (routesMap[rName] || []).find(s => cleanSpaces(s.name).toLowerCase() === key);
+        if (found) return Number(found.qty) || 1;
       }
+
       return isTwoMachineStore(storeName) ? 2 : 1;
     }
 
@@ -492,29 +574,29 @@
         } catch (e) {
           storeOptions = [...INITIAL_STORES];
         }
-      } else {
-        storeOptions = [...INITIAL_STORES];
-      }
-
-      // Tải bản đồ số máy mặc định của quán
-      const savedStoreQtyMap = localStorage.getItem("expense_store_qty_map_v2");
-      if (savedStoreQtyMap) {
+      // Tải danh sách các tuyến (v3)
+      const savedRoutes = localStorage.getItem("expense_routes_v3");
+      if (savedRoutes) {
         try {
-          storeQtyMap = JSON.parse(savedStoreQtyMap);
+          routesMap = JSON.parse(savedRoutes);
         } catch (e) {
-          storeQtyMap = {};
+          routesMap = JSON.parse(JSON.stringify(DEFAULT_ROUTES_DATA));
         }
       } else {
-        storeQtyMap = {};
+        routesMap = JSON.parse(JSON.stringify(DEFAULT_ROUTES_DATA));
       }
 
-      // Khởi tạo mặc định 2 máy cho 3 quán quy định nếu chưa có
-      INITIAL_STORES.forEach(st => {
-        const key = cleanSpaces(st).toLowerCase();
-        if (storeQtyMap[key] === undefined) {
-          storeQtyMap[key] = isTwoMachineStore(st) ? 2 : 1;
-        }
-      });
+      // Đảm bảo luôn có ít nhất 1 tuyến
+      if (!routesMap || Object.keys(routesMap).length === 0) {
+        routesMap = JSON.parse(JSON.stringify(DEFAULT_ROUTES_DATA));
+      }
+
+      const savedSelectedRoute = localStorage.getItem("expense_current_route_v3");
+      if (savedSelectedRoute && routesMap[savedSelectedRoute]) {
+        currentRoute = savedSelectedRoute;
+      } else {
+        currentRoute = Object.keys(routesMap)[0];
+      }
 
       // Tải danh sách bản ghi
       const savedRecords = localStorage.getItem("expense_records_v2");
@@ -547,8 +629,8 @@
     }
 
     function saveState() {
-      localStorage.setItem("expense_stores_v2", JSON.stringify(storeOptions));
-      localStorage.setItem("expense_store_qty_map_v2", JSON.stringify(storeQtyMap));
+      localStorage.setItem("expense_routes_v3", JSON.stringify(routesMap));
+      localStorage.setItem("expense_current_route_v3", currentRoute);
       localStorage.setItem("expense_records_v2", JSON.stringify(records));
       localStorage.setItem("expense_filename_v2", loadedFileName);
       localStorage.setItem("expense_default_price", defaultUnitPrice);
@@ -572,40 +654,139 @@
       }
     }
 
+    function renderRouteDropdown() {
+      const selectRoute = document.getElementById("selectRoute");
+      selectRoute.innerHTML = "";
+      const routeNames = Object.keys(routesMap);
+
+      routeNames.forEach(rName => {
+        const count = (routesMap[rName] || []).length;
+        const opt = document.createElement("option");
+        opt.value = rName;
+        opt.textContent = `Tuyến ${rName} (${count} điểm)`;
+        selectRoute.appendChild(opt);
+      });
+
+      if (routesMap[currentRoute]) {
+        selectRoute.value = currentRoute;
+      } else if (routeNames.length > 0) {
+        currentRoute = routeNames[0];
+        selectRoute.value = currentRoute;
+      }
+
+      const storeList = getCurrentRouteStores();
+      const twoMachineNames = storeList.filter(s => s.qty === 2).map(s => s.name);
+      const summaryEl = document.getElementById("routeInfoSummary");
+      if (twoMachineNames.length > 0) {
+        summaryEl.textContent = `Tuyến ${currentRoute}: ${storeList.length} điểm (2 máy: ${twoMachineNames.join(", ")})`;
+      } else {
+        summaryEl.textContent = `Tuyến ${currentRoute}: ${storeList.length} điểm (tất cả 1 máy)`;
+      }
+
+      document.getElementById("lblCurrentRouteTag").textContent = `(Tuyến ${currentRoute})`;
+    }
+
     function renderStoreDropdown() {
+      renderRouteDropdown();
       const select = document.getElementById("selectStore");
       const currentSelected = select.value;
       select.innerHTML = "";
 
-      if (storeOptions.length === 0) {
+      const currentStores = getCurrentRouteStores();
+
+      // Tính tổng số điểm toàn bộ các tuyến cho thẻ KPI
+      let totalUniqueStores = 0;
+      Object.values(routesMap).forEach(list => totalUniqueStores += list.length);
+      document.getElementById("cardStoreCount").textContent = totalUniqueStores;
+
+      if (currentStores.length === 0) {
         const opt = document.createElement("option");
         opt.value = "";
-        opt.textContent = "-- Chưa có quán nào (hãy bấm + thêm quán) --";
+        opt.textContent = `-- Tuyến ${currentRoute} chưa có quán (bấm + Thêm quán) --`;
         select.appendChild(opt);
-        document.getElementById("cardStoreCount").textContent = 0;
         checkAndAutoSelectStoreQty();
         return;
       }
 
-      storeOptions.forEach((st, idx) => {
+      currentStores.forEach((stObj, idx) => {
         const opt = document.createElement("option");
-        opt.value = st;
-        const dQty = getStoreDefaultQty(st);
-        const badge2 = dQty === 2 ? " [⚡ 2 máy]" : "";
-        opt.textContent = `${idx + 1}. ${st}${badge2}`;
+        opt.value = stObj.name;
+        const badge2 = stObj.qty === 2 ? " [⚡ 2 máy]" : "";
+        opt.textContent = `${idx + 1}. ${stObj.name}${badge2}`;
         select.appendChild(opt);
       });
 
-      if (currentSelected && storeOptions.includes(currentSelected)) {
+      if (currentSelected && currentStores.some(s => s.name === currentSelected)) {
         select.value = currentSelected;
       }
-      document.getElementById("cardStoreCount").textContent = storeOptions.length;
       checkAndAutoSelectStoreQty();
     }
 
+    // Khi đổi Tuyến Đường
+    document.getElementById("selectRoute").addEventListener("change", function() {
+      currentRoute = this.value;
+      saveState();
+      renderStoreDropdown();
+    });
+
+    // Bật/Tắt ô thêm tuyến mới
+    document.getElementById("btnToggleNewRoute").addEventListener("click", () => {
+      const box = document.getElementById("newRouteBox");
+      box.classList.toggle("hidden");
+      if (!box.classList.contains("hidden")) {
+        document.getElementById("inputNewRouteName").focus();
+      }
+    });
+
+    // Lưu Tuyến mới
+    document.getElementById("btnAddNewRouteSubmit").addEventListener("click", () => {
+      const input = document.getElementById("inputNewRouteName");
+      const routeName = cleanSpaces(input.value);
+      if (!routeName) {
+        showToast("Vui lòng nhập tên tuyến!", "warning");
+        return;
+      }
+
+      const existingKey = Object.keys(routesMap).find(k => k.toLowerCase() === routeName.toLowerCase());
+      if (existingKey) {
+        currentRoute = existingKey;
+        showToast(`Tuyến "${existingKey}" đã tồn tại, đã chuyển sang tuyến này!`, "info");
+      } else {
+        routesMap[routeName] = [];
+        currentRoute = routeName;
+        showToast(`Đã tạo tuyến mới: "${routeName}"!`, "success");
+      }
+
+      input.value = "";
+      document.getElementById("newRouteBox").classList.add("hidden");
+      saveState();
+      renderStoreDropdown();
+    });
+
+    // Xóa Tuyến đang chọn
+    document.getElementById("btnDeleteRoute").addEventListener("click", () => {
+      const routeKeys = Object.keys(routesMap);
+      if (routeKeys.length <= 1) {
+        showToast("Phải giữ lại ít nhất 1 tuyến đường!", "warning");
+        return;
+      }
+
+      openModal({
+        title: "Xóa tuyến đường",
+        message: `Bạn có chắc muốn xóa tuyến "${currentRoute}" và danh sách quán thuộc tuyến này?`,
+        onConfirm: () => {
+          delete routesMap[currentRoute];
+          currentRoute = Object.keys(routesMap)[0];
+          saveState();
+          renderStoreDropdown();
+          showToast("Đã xóa tuyến đường!", "info");
+        }
+      });
+    });
+
     document.getElementById("selectStore").addEventListener("change", checkAndAutoSelectStoreQty);
 
-    // XÓA TÊN QUÁN KHỎI DANH SÁCH LỰA CHỌN (OPTION)
+    // XÓA TÊN QUÁN KHỎI TUYẾN ĐANG CHỌN
     document.getElementById("btnDeleteStoreOption").addEventListener("click", () => {
       const currentStore = document.getElementById("selectStore").value;
       if (!currentStore) {
@@ -614,16 +795,17 @@
       }
 
       openModal({
-        title: "Xóa quán khỏi danh mục",
-        message: `Bạn có chắc muốn xóa quán "${currentStore}" khỏi danh sách lựa chọn? (Các dòng đã chấm công trước đó vẫn được giữ nguyên)`,
+        title: "Xóa quán khỏi tuyến",
+        message: `Xóa quán "${currentStore}" khỏi tuyến ${currentRoute}?`,
         onConfirm: () => {
           const key = cleanSpaces(currentStore).toLowerCase();
-          storeOptions = storeOptions.filter(st => cleanSpaces(st).toLowerCase() !== key);
-          delete storeQtyMap[key];
+          routesMap[currentRoute] = (routesMap[currentRoute] || []).filter(
+            st => cleanSpaces(st.name).toLowerCase() !== key
+          );
 
           saveState();
           renderStoreDropdown();
-          showToast(`Đã xóa quán "${currentStore}" khỏi danh mục!`, "info");
+          showToast(`Đã xóa quán "${currentStore}" khỏi tuyến ${currentRoute}!`, "info");
         }
       });
     });
@@ -964,8 +1146,10 @@
         note: newNote
       };
 
-      if (!storeOptions.some(st => st.toLowerCase() === newStore.toLowerCase())) {
-        storeOptions.push(newStore);
+      const currentList = getCurrentRouteStores();
+      if (!currentList.some(st => st.name.toLowerCase() === newStore.toLowerCase())) {
+        currentList.push({ name: newStore, qty: newQty });
+        routesMap[currentRoute] = currentList;
         renderStoreDropdown();
       }
 
@@ -1009,16 +1193,7 @@
         qty: qty,
         total: total,
         note: inputNote
-      });
-
-      saveState();
-      renderTable();
-      updateStatisticsAndReport();
-      document.getElementById("inputNote").value = "";
-      showToast(`Đã thêm: ${selectStore}`, "success");
-    });
-
-    // THÊM NHANH TẤT CẢ CÁC QUÁN TRONG OPTION CHO NGÀY ĐƯỢC CHỌN
+    // THÊM NHANH TẤT CẢ CÁC QUÁN TRONG TUYẾN ĐANG CHỌN CHO NGÀY ĐƯỢC CHỌN
     document.getElementById("btnQuickAddAll").addEventListener("click", () => {
       const chosenDate = document.getElementById("inputDate").value;
       if (!chosenDate) {
@@ -1026,16 +1201,23 @@
         return;
       }
 
+      const routeStores = getCurrentRouteStores();
+      if (routeStores.length === 0) {
+        showToast(`Tuyến "${currentRoute}" hiện chưa có điểm nào!`, "warning");
+        return;
+      }
+
       const unitPrice = parseInt(document.getElementById("inputUnitPrice").value, 10) || defaultUnitPrice;
       let addedCount = 0;
       let skippedCount = 0;
 
-      storeOptions.forEach(storeName => {
+      routeStores.forEach(stObj => {
+        const storeName = stObj.name;
         const exists = records.some(r => r.date === chosenDate && r.store.toLowerCase() === storeName.toLowerCase());
         if (exists) {
           skippedCount++;
         } else {
-          const qty = getStoreDefaultQty(storeName);
+          const qty = Number(stObj.qty) || 1;
           records.push({
             date: chosenDate,
             store: storeName,
@@ -1053,9 +1235,9 @@
         renderTable();
         updateStatisticsAndReport();
         const [y, m, d] = chosenDate.split('-');
-        showToast(`Đã thêm ${addedCount} quán cho ngày ${d}/${m} (bỏ qua ${skippedCount} quán đã có)`, "success");
+        showToast(`Tuyến ${currentRoute}: đã thêm ${addedCount} quán ngày ${d}/${m} (bỏ qua ${skippedCount} trùng)`, "success");
       } else {
-        showToast("Tất cả các quán trong ngày này đã có đủ!", "warning");
+        showToast(`Tất cả quán tuyến ${currentRoute} trong ngày này đã có đủ!`, "warning");
       }
     });
 
@@ -1073,11 +1255,13 @@
       const defaultQtyRadio = document.querySelector('input[name="newStoreDefaultQty"]:checked');
       const defaultQty = defaultQtyRadio ? parseInt(defaultQtyRadio.value, 10) : 1;
 
-      // Lưu số máy mặc định cho quán này
-      storeQtyMap[name.toLowerCase()] = defaultQty;
-
-      if (!storeOptions.some(st => st.toLowerCase() === name.toLowerCase())) {
-        storeOptions.push(name);
+      if (!routesMap[currentRoute]) routesMap[currentRoute] = [];
+      const existingIdx = routesMap[currentRoute].findIndex(st => st.name.toLowerCase() === name.toLowerCase());
+      
+      if (existingIdx >= 0) {
+        routesMap[currentRoute][existingIdx].qty = defaultQty;
+      } else {
+        routesMap[currentRoute].push({ name: name, qty: defaultQty });
       }
 
       saveState();
@@ -1086,7 +1270,7 @@
       nameInput.value = "";
       document.getElementById("newStoreBox").classList.add("hidden");
       checkAndAutoSelectStoreQty();
-      showToast(`Đã lưu quán "${name}" với mặc định ${defaultQty} máy!`, "success");
+      showToast(`Đã lưu "${name}" (${defaultQty} máy) vào tuyến ${currentRoute}!`, "success");
     });
 
     window.deleteSingleRecord = function(index) {
@@ -1197,8 +1381,13 @@
               continue;
             }
 
-            if (!storeOptions.some(st => st.toLowerCase() === storeName.toLowerCase())) {
-              storeOptions.push(storeName);
+            // Nếu quán chưa có trong bất kỳ tuyến nào thì thêm vào tuyến hiện tại
+            const existsInAnyRoute = Object.values(routesMap).some(list =>
+              list.some(st => st.name.toLowerCase() === storeName.toLowerCase())
+            );
+            if (!existsInAnyRoute) {
+              if (!routesMap[currentRoute]) routesMap[currentRoute] = [];
+              routesMap[currentRoute].push({ name: storeName, qty: qty });
             }
 
             records.push({
