@@ -572,8 +572,10 @@
         try {
           storeOptions = JSON.parse(savedStores).map(cleanSpaces).filter(Boolean);
         } catch (e) {
-          storeOptions = [...INITIAL_STORES];
+          // Bỏ qua dữ liệu cũ
         }
+      }
+
       // Tải danh sách các tuyến (v3)
       const savedRoutes = localStorage.getItem("expense_routes_v3");
       if (savedRoutes) {
@@ -1193,6 +1195,15 @@
         qty: qty,
         total: total,
         note: inputNote
+      });
+
+      saveState();
+      renderTable();
+      updateStatisticsAndReport();
+      document.getElementById("inputNote").value = "";
+      showToast(`Đã lưu: ${selectStore} (${qty} máy)`, "success");
+    });
+
     // THÊM NHANH TẤT CẢ CÁC QUÁN TRONG TUYẾN ĐANG CHỌN CHO NGÀY ĐƯỢC CHỌN
     document.getElementById("btnQuickAddAll").addEventListener("click", () => {
       const chosenDate = document.getElementById("inputDate").value;
